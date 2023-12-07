@@ -1,0 +1,1 @@
+Pull data from the SmartScope database using the SmartScope connector.

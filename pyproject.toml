@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Smartscope-connector"
+authors = [
+    {name = "Jonathan Bouvette", email = "bouvette@princeton.edu"},
+]
+description = "Connection module for the Smartscope REST API along with the Smartscope data models"
+keywords = ["smartscope", "cryoem", "screening", "models", "rest", "api", "connector"]
+license = {text = "BSD-3-Clause"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dynamic = ["version", "readme"]
+dependencies = [
+    "pydantic",
+    "pyyaml==6.0",
+]
+
+
+[project.optional-dependencies]
+dev = ["black", "flake8", "pytest"]
+
+
+[tool.setuptools.dynamic]
+version = {file = ["VERSION"]}
+readme = {file = ["README.md"]}
+
+[tool.setuptools]
+packages = ["smartscope_connector"]
