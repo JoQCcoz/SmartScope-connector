@@ -1,7 +1,7 @@
 import pytest
 from .. import rest_api_interface as RestAPI
-from Smartscope.lib.Datatypes.querylist import QueryList
-from Smartscope.core.models import Microscope, Detector, AtlasModel
+from smartscope_connector.Datatypes.querylist import QueryList
+from smartscope_connector.models import Microscope, Detector, AtlasModel
 
 def test_generate_get_url():
     url = RestAPI.generate_get_url(base_url='http://testurl/api', route='microscopes', filters=dict(name='fake_scope', microscope_id='h0PgRUjUq2K2Cr1CGZJq3q08il8i5n' ))

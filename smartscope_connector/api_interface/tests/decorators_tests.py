@@ -1,5 +1,5 @@
 import pytest
-from Smartscope.core.models.base_model import SmartscopeBaseModel
+from smartscope_connector.models.base_model import SmartscopeBaseModel
 
 from ..decorators import parse_output
 
