@@ -9,15 +9,13 @@ from Smartscope.core.settings import worker
 # from Smartscope import __version__ as SmartscopeVersion
 
 class ScreeningSession(SmartscopeBaseModel):
-    # from .microscope import Microscope
-    # from .detector import Detector
     session:str
     group: str
     date: datetime
     version: str
     microscope_id: str
     detector_id: str
-    working_dir: str
+    directory: str
 
     class Meta:
         api_route = 'sessions'

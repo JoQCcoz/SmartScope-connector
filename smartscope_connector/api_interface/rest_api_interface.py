@@ -5,7 +5,7 @@ from . import API_BASE_URL, API_KEY
 from ..Datatypes.querylist import QueryList
 from ..models.base_model import SmartscopeBaseModel
 
-from .decorators import parse_output
+from .decorators import parse_output, parse_multiple
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def generate_get_url(base_url:str=API_BASE_URL,route:str='',filters:Dict=dict(),
 def generate_get_single_url(object_id:str, base_url:str=API_BASE_URL, route:str='', route_suffix:str='') -> str:
     if route_suffix != '':
         route_suffix = f'{route_suffix}/'
-    return f'{add_trailing_slash(base_url)}{route}/{route_suffix}{object_id}/'
+    return f'{add_trailing_slash(base_url)}{route}/{object_id}/{route_suffix}'
 
 
 def get_from_API(url, auth_header:Dict=AUTH_HEADER) -> requests.Response:
@@ -50,7 +50,7 @@ def get_from_API(url, auth_header:Dict=AUTH_HEADER) -> requests.Response:
         raise RequestUnsuccessfulError(response)
     return response
 
-def patch_single(url,data,auth_header:Dict=AUTH_HEADER) -> requests.Response:
+def patch(url,data,auth_header:Dict=AUTH_HEADER) -> requests.Response:
     response = requests.patch(url=url,data=data,headers=auth_header)
     if response.status_code != 200:
         raise RequestUnsuccessfulError(response)
@@ -63,8 +63,8 @@ def post(url, data, auth_header:Dict=AUTH_HEADER) -> requests.Response:
     return response.json()
 
 @parse_output
-def get_single(object_id,output_type:SmartscopeBaseModel, auth_header:Dict=AUTH_HEADER) -> SmartscopeBaseModel:
-    url = generate_get_single_url(object_id=object_id, route=output_type.api_route)
+def get_single(object_id,output_type:SmartscopeBaseModel, auth_header:Dict=AUTH_HEADER, route_suffix:str='') -> SmartscopeBaseModel:
+    url = generate_get_single_url(object_id=object_id, route=output_type.api_route, route_suffix=route_suffix)
     response =  get_from_API(url, auth_header)
     return response.json()
 
@@ -74,23 +74,33 @@ def get_many(output_type:SmartscopeBaseModel, auth_header:Dict=AUTH_HEADER,route
     response =  get_from_API(url, auth_header)
     return response.json()
 
-
+@parse_multiple
+def get_multiple(instance:SmartscopeBaseModel,output_types:List[SmartscopeBaseModel], auth_header:Dict=AUTH_HEADER, route_suffix:str='') -> Dict[str,SmartscopeBaseModel]:
+    url = generate_get_single_url(object_id=instance.uid,route=instance.api_route, route_suffix=route_suffix)
+    response = get_from_API(url, auth_header) 
+    return response.json()
 
 def update(instance:SmartscopeBaseModel, auth_header:Dict=AUTH_HEADER, route_suffix:str='', **fields) -> SmartscopeBaseModel:
-    url = generate_get_single_url(instance.uid,route=instance.api_route, route_suffix=route_suffix)
-    reponse = patch_single(url=url, data=fields,auth_header=auth_header)
+    url = generate_get_single_url(object_id=instance.uid,route=instance.api_route, route_suffix=route_suffix)
+    reponse = patch(url=url, data=fields,auth_header=auth_header)
     return instance.model_validate(reponse.json())
 
-def post_single(instance:SmartscopeBaseModel, auth_header:Dict=AUTH_HEADER) -> SmartscopeBaseModel:
-    url = generate_get_url(route=instance.api_route)
+def update_many(instances: QueryList[SmartscopeBaseModel], auth_header:Dict=AUTH_HEADER, route_suffixes=['update_many'], **fields) -> QueryList[SmartscopeBaseModel]:
+    url = generate_get_url(route=instances.first().api_route, route_suffixes=route_suffixes)
+    response = patch(url,data={'uids':instances.dump_uids()} | fields,auth_header=auth_header)
+    return response
+
+def post_single(instance:SmartscopeBaseModel, auth_header:Dict=AUTH_HEADER, route_suffix='', **filters) -> SmartscopeBaseModel:
+    url = generate_get_url(route=instance.api_route, route_suffixes=[route_suffix], filters=filters)
     response = post(url,data=instance.model_dump(exclude_unset=True),auth_header=auth_header)
     return instance.model_validate(response)
 
 @parse_output
-def post_many(instances: QueryList[SmartscopeBaseModel],output_type:SmartscopeBaseModel, auth_header:Dict=AUTH_HEADER, route_suffixes=['post_many'] ) -> QueryList[SmartscopeBaseModel]:
-    url = generate_get_url(route=instances.first().api_route, route_suffixes=route_suffixes)
+def post_many(instances: QueryList[SmartscopeBaseModel],output_type:SmartscopeBaseModel, auth_header:Dict=AUTH_HEADER, route_suffixes=['post_many'], **filters ) -> QueryList[SmartscopeBaseModel]:
+    url = generate_get_url(route=instances.first().api_route, route_suffixes=route_suffixes, filters=filters)
     response = post(url,data=instances.dump_all(),auth_header=auth_header)
     return response
+
 
 def delete_single(instance:SmartscopeBaseModel, auth_header:Dict=AUTH_HEADER) -> requests.Response:
     url = generate_get_single_url(instance.uid,route=instance.api_route)

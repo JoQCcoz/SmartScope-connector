@@ -1,11 +1,14 @@
-     
+from typing import List
+from pydantic import Field     
 from .target import Target
+from .hole import HoleModel
 from .extra_property_mixin import ExtraPropertyMixin
 
 class SquareModel(Target, ExtraPropertyMixin):
 
     area:float
     atlas_id: str
+    targets: List[HoleModel] = Field(default_factory=list)
 
     class Meta(Target.Meta):
         api_route = 'squares'

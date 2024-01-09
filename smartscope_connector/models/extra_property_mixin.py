@@ -50,7 +50,7 @@ class ExtraPropertyMixin:
     
     @ property
     def raw(self):
-        return f'{self.name}.mrc'
+        return f'raw/{self.name}.mrc'
 
     @ property
     def ctf_img(self):

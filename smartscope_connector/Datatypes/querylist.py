@@ -18,3 +18,8 @@ class QueryList(list):
         uids = [obj.uid for obj in self]
         logger.debug(f'Dumping {len(self)} uids: {uids}')
         return uids
+    
+    def set_fields(self, **fields) -> None:
+        for obj in self:
+            for field, value in fields.items():
+                setattr(obj, field, value)

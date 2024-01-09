@@ -1,7 +1,7 @@
 import pytest
 from .. import rest_api_interface as RestAPI
 from smartscope_connector.Datatypes.querylist import QueryList
-from smartscope_connector.models import Microscope, Detector, AtlasModel
+from smartscope_connector.models import Microscope, Detector, AtlasModel, SquareModel, HoleModel, AutoloaderGrid
 
 def test_generate_get_url():
     url = RestAPI.generate_get_url(base_url='http://testurl/api', route='microscopes', filters=dict(name='fake_scope', microscope_id='h0PgRUjUq2K2Cr1CGZJq3q08il8i5n' ))
@@ -35,12 +35,12 @@ def test_patch_single():
     object_id = '3'
     url = f'http://nginx:80/api/detectors/{object_id}/'
     data = dict(atlas_max_tiles_X= 7)
-    response = RestAPI.patch_single(url=url,data=data)
+    response = RestAPI.patch(url=url,data=data)
     assert response.status_code == 200
     assert response.json()['atlas_max_tiles_X'] == 7
     #Reset Value
     data = dict(atlas_max_tiles_X= 6)
-    response = RestAPI.patch_single(url=url,data=data)
+    response = RestAPI.patch(url=url,data=data)
     assert response.json()['atlas_max_tiles_X'] == 6
 
 def test_update():
@@ -94,5 +94,10 @@ def test_delete_many():
     response = RestAPI.delete_many(instances=objs)
     assert response.status_code == 204
 
+def test_parse_multiple():
+    grid = RestAPI.get_single(object_id='1grid1NU7da3oLMXBOXJZSctEKr3jg',output_type=AutoloaderGrid)
+    queue = RestAPI.get_multiple(instance=grid,output_types=[SquareModel,HoleModel],route_suffix='get_queue')
+    assert isinstance(queue['squaremodel'],SquareModel)
+    assert isinstance(queue['holemodel'],HoleModel) or queue['holemodel'] is None
 
 

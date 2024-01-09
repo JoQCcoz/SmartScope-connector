@@ -30,7 +30,7 @@ class Target(SmartscopeBaseModel):
     @field_validator('finders','classifiers','selectors', mode='before')
     @classmethod
     def validate_target_labels(cls, v):
-        print(f'Validating target labels, {v}')
+        # print(f'Validating target labels, {v}')
         if v is None:
             return []
         return v

@@ -1,10 +1,11 @@
-from typing import get_args, get_origin, List
+from typing import get_args, get_origin, List, Dict
 import inspect
 from ..Datatypes.querylist import QueryList
 from ..models.base_model import SmartscopeBaseModel
 
 
 def parse_output(func):
+
     def wrapper_many(output_type:SmartscopeBaseModel,*args,**kwargs) -> List[SmartscopeBaseModel]:
         results = func(output_type=output_type,*args,**kwargs)
         if isinstance(results,dict):
@@ -26,3 +27,14 @@ def parse_output(func):
         return wrapper_many
     
     return wrapper_single
+
+def parse_multiple(func):
+
+    def wrapper(output_types:List[SmartscopeBaseModel],*args,**kwargs) -> Dict[str,SmartscopeBaseModel]:
+        results = func(output_types=output_types,*args,**kwargs)
+        for output_type in output_types:
+            if (obj:=results[output_type.__name__.lower()]) is not None:
+                results[output_type.__name__.lower()] = output_type.model_validate(obj)
+        return results
+    
+    return wrapper

@@ -1,2 +1,2 @@
-API_KEY = '60f0d6682b39301e7714d43ad1eb2fe83f00a5e9'
+API_KEY = '102a23ca30a80c8c09e921fab53f73b8720f6f10'
 API_BASE_URL = 'http://nginx:80/api/'
