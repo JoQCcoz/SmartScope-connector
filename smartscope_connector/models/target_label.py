@@ -3,13 +3,16 @@ source model with any other model through content_object
 '''
 from typing import Optional
 from pydantic import BaseModel
+from .base_model import SmartscopeBaseModel
 
 
 
 class TargetLabel(BaseModel):
-    # content_type:Optional[str] = None
-    # object_id: Optional[str] = None
     method_name:str
+
+class DetailedTargetLabel(SmartscopeBaseModel, TargetLabel):
+    # content_type:Optional[str] = None
+    object_id: Optional[str] = None
 
 class Finder(TargetLabel):
     x: int
@@ -29,8 +32,14 @@ class Finder(TargetLabel):
 class Classifier(TargetLabel):
     label: str
 
+class DetailedClassifier(DetailedTargetLabel, Classifier):
+
+    class Meta(SmartscopeBaseModel.Meta):
+        api_route='classes'
+
+
 class Selector(TargetLabel):
-    value: float
+    value: Optional[float] = None
     label:Optional[str] = None
 
 

@@ -1,6 +1,6 @@
 # from .base_model import *
 import os
-from Smartscope.lib.image.smartscope_storage import SmartscopeStorage
+# from Smartscope.lib.image.smartscope_storage import SmartscopeStorage
 
 class ExtraPropertyMixin:
     def get_full_path(self, data):

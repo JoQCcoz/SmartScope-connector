@@ -1,2 +1,2 @@
-API_KEY = '102a23ca30a80c8c09e921fab53f73b8720f6f10'
-API_BASE_URL = 'http://nginx:80/api/'
+API_KEY = '8f144827d87363468e48753098bcfcf7787e33fc'
+API_BASE_URL = 'https://mol-smartscope.princeton.edu/api/'

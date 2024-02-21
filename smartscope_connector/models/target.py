@@ -5,7 +5,6 @@ from typing import List, Optional, Union
 # from Smartscope.core.settings.worker import PLUGINS_FACTORY
 from .base_model import SmartscopeBaseModel
 from pydantic import Field, field_validator
-from Smartscope.core.status import status
 from ..Datatypes.querylist import QueryList
 from .target_label import Finder, Classifier, Selector
 

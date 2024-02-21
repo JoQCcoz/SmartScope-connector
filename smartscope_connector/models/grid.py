@@ -10,7 +10,7 @@ class AutoloaderGrid(SmartscopeBaseModel):
     position: int
     name: str
     session_id: str
-    holetype_id:str
+    holeType:str
     meshSize:str
     meshMaterial:str
     hole_angle:Optional[float]

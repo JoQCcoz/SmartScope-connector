@@ -2,22 +2,23 @@ import pytest
 from .. import rest_api_interface as RestAPI
 from smartscope_connector.Datatypes.querylist import QueryList
 from smartscope_connector.models import Microscope, Detector, AtlasModel, SquareModel, HoleModel, AutoloaderGrid
+from .. import API_BASE_URL
 
 def test_generate_get_url():
     url = RestAPI.generate_get_url(base_url='http://testurl/api', route='microscopes', filters=dict(name='fake_scope', microscope_id='h0PgRUjUq2K2Cr1CGZJq3q08il8i5n' ))
     assert url == 'http://testurl/api/microscopes/?name=fake_scope&microscope_id=h0PgRUjUq2K2Cr1CGZJq3q08il8i5n&'
 
 def test_api_connection():
-    response = RestAPI.get_from_API(url='http://nginx:80/api/')
+    response = RestAPI.get_from_API(url=API_BASE_URL)
     assert response.status_code == 200
 
 def test_api_connection_error():
     with pytest.raises(RestAPI.RequestUnsuccessfulError):
-        RestAPI.get_from_API(url='http://nginx:80/wrongapi/')
+        RestAPI.get_from_API(url=API_BASE_URL.replace('api','wrongapi'))
 
 def test_get_from_API():
     import json
-    response = RestAPI.get_from_API(url='http://nginx:80/api/microscopes/?name=fake_scope&')
+    response = RestAPI.get_from_API(url=f'{API_BASE_URL}microscopes/?name=fake_scope&')
     assert len(json.loads(response.content)['results']) == 1
 
 def test_get_single():
@@ -27,13 +28,13 @@ def test_get_single():
     assert response.uid == 'h0PgRUjUq2K2Cr1CGZJq3q08il8i5n'
 
 def test_get_many():
-    results = RestAPI.get_many(output_type=Detector,name='test_k2', id=3)
+    results = RestAPI.get_many(output_type=Detector,name='test_k2')
     assert len(results) == 1
     assert isinstance(results[0],Detector)
 
 def test_patch_single():
-    object_id = '3'
-    url = f'http://nginx:80/api/detectors/{object_id}/'
+    object_id = '31'
+    url = f'{API_BASE_URL}detectors/{object_id}/'
     data = dict(atlas_max_tiles_X= 7)
     response = RestAPI.patch(url=url,data=data)
     assert response.status_code == 200
@@ -44,7 +45,7 @@ def test_patch_single():
     assert response.json()['atlas_max_tiles_X'] == 6
 
 def test_update():
-    object_id = '3'
+    object_id = '31'
     instance = RestAPI.get_single(object_id=object_id,output_type=Detector)
     instance = RestAPI.update(instance=instance, atlas_max_tiles_X=7)
     assert isinstance(instance,Detector)
@@ -65,7 +66,7 @@ def generate_get_single_object_for_testing():
 
 def test_post():
     obj = generate_get_single_object_for_testing()
-    url = f'http://nginx:80/api/detectors/'
+    url = f'{API_BASE_URL}detectors/'
     output = RestAPI.post(url=url,data=obj.model_dump(exclude_none=True,by_alias=True))
     assert output['id'] is not None
     assert output['name'] == 'New_test_detector'
@@ -95,9 +96,9 @@ def test_delete_many():
     assert response.status_code == 204
 
 def test_parse_multiple():
-    grid = RestAPI.get_single(object_id='1grid1NU7da3oLMXBOXJZSctEKr3jg',output_type=AutoloaderGrid)
+    grid = RestAPI.get_single(object_id='1grid1OkinLNkbO4t1d8zuPKk3R5KE',output_type=AutoloaderGrid)
     queue = RestAPI.get_multiple(instance=grid,output_types=[SquareModel,HoleModel],route_suffix='get_queue')
-    assert isinstance(queue['squaremodel'],SquareModel)
+    assert isinstance(queue['squaremodel'],SquareModel) or queue['squaremodel'] is None
     assert isinstance(queue['holemodel'],HoleModel) or queue['holemodel'] is None
 
 

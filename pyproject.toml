@@ -17,6 +17,8 @@ dynamic = ["version", "readme"]
 dependencies = [
     "pydantic",
     "pyyaml==6.0",
+    "requests",
+    "numpy"
 ]
 
 

@@ -5,7 +5,7 @@ from typing import Optional, Union, Dict, Any
 from .base_model import SmartscopeBaseModel
 from pydantic import field_validator, model_validator
 # from Smartscope.lib.image.smartscope_storage import SmartscopeStorage
-from Smartscope.core.settings import worker
+# from Smartscope.core.settings import worker
 # from Smartscope import __version__ as SmartscopeVersion
 
 class ScreeningSession(SmartscopeBaseModel):
@@ -35,9 +35,9 @@ class ScreeningSession(SmartscopeBaseModel):
     #     return Path(worker.AUTOSCREENDIR, self.working_dir)
 
 
-    @property
-    def stop_file(self):
-        return Path(worker.TEMPDIR, f'{self.uid}.stop')
+    # @property
+    # def stop_file(self):
+    #     return Path(worker.TEMPDIR, f'{self.uid}.stop')
     
     # @property
     # def progress(self):

@@ -1,6 +1,7 @@
 import requests
 import logging
-from typing import Dict, List
+import re
+from typing import Dict, List, Callable,Optional
 from . import API_BASE_URL, API_KEY
 from ..Datatypes.querylist import QueryList
 from ..models.base_model import SmartscopeBaseModel
@@ -37,9 +38,14 @@ def generate_get_url(base_url:str=API_BASE_URL,route:str='',filters:Dict=dict(),
         url += f'{i}={j}&' 
     return url
 
-def generate_get_single_url(object_id:str, base_url:str=API_BASE_URL, route:str='', route_suffix:str='') -> str:
+def generate_get_single_url(object_id:str, base_url:str=API_BASE_URL, route:str='', route_suffix:str='', filters:Dict=dict()) -> str:
     if route_suffix != '':
         route_suffix = f'{route_suffix}/'
+    if filters != dict():
+        route_suffix += '?'
+
+    for i,j in filters.items():
+        route_suffix += f'{i}={j}&' 
     return f'{add_trailing_slash(base_url)}{route}/{object_id}/{route_suffix}'
 
 
@@ -62,6 +68,15 @@ def post(url, data, auth_header:Dict=AUTH_HEADER) -> requests.Response:
         raise RequestUnsuccessfulError(response)    
     return response.json()
 
+def download_image(url, output_handler: Callable, auth_header:Dict=AUTH_HEADER, filename:Optional[str]=None):
+    response = requests.get(url, stream=True, headers=auth_header)
+    if response.status_code == 200:
+        if filename is None:
+            d = response.headers['content-disposition']
+            filename = re.findall("filename=\"(.+)\"", d)[0]
+        return output_handler(response.raw, filename=filename)
+    raise RequestUnsuccessfulError(response)
+
 @parse_output
 def get_single(object_id,output_type:SmartscopeBaseModel, auth_header:Dict=AUTH_HEADER, route_suffix:str='') -> SmartscopeBaseModel:
     url = generate_get_single_url(object_id=object_id, route=output_type.api_route, route_suffix=route_suffix)
@@ -71,6 +86,7 @@ def get_single(object_id,output_type:SmartscopeBaseModel, auth_header:Dict=AUTH_
 @parse_output
 def get_many(output_type:SmartscopeBaseModel, auth_header:Dict=AUTH_HEADER,route_suffixes:List[str]=[], **filters) -> QueryList[SmartscopeBaseModel]:
     url = generate_get_url(route=output_type.api_route,filters=filters, route_suffixes=route_suffixes)
+    print(url)
     response =  get_from_API(url, auth_header)
     return response.json()
 
