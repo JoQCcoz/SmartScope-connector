@@ -45,7 +45,7 @@ class Target(SmartscopeBaseModel):
     
     @property
     def coords(self) -> np.ndarray:
-        finder = self.finders.first()
+        finder = QueryList(self.finders).first()
         return np.array([finder.x, finder.y])
 
     # def is_excluded(self):

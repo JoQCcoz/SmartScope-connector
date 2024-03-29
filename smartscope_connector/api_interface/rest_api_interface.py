@@ -6,11 +6,11 @@ from . import API_BASE_URL, API_KEY
 from ..Datatypes.querylist import QueryList
 from ..models.base_model import SmartscopeBaseModel
 
-from .decorators import parse_output, parse_multiple
+from .decorators import parse_output, parse_multiple, parse_single, parse_many
 
 logger = logging.getLogger(__name__)
 
-AUTH_HEADER={'Authorization':f'Token {API_KEY}'}
+AUTH_HEADER = None
 
 class RequestUnsuccessfulError(Exception):
    
@@ -22,14 +22,17 @@ class RequestUnsuccessfulError(Exception):
         message = f'Request made to\n\t{self.response.url}\nreturned a {self.response.status_code}, {self.response.reason}'
         return message
 
+def generate_auth_header(key) -> Dict:
+    return {'Authorization':f'Token {API_KEY}'}
+
 def add_trailing_slash(url:str):
     if url[-1] == '/':
         return url
     return url + '/'
 
-def generate_get_url(base_url:str=API_BASE_URL,route:str='',filters:Dict=dict(),route_suffixes:List[str]=list()) -> str:
+def generate_get_url(base_url:str=API_BASE_URL,route:str='',filters:Dict=dict(),route_suffix:str='') -> str:
     url = f'{add_trailing_slash(base_url)}{route}/'
-    url += '/'.join(route_suffixes)
+    url += route_suffix
     url = add_trailing_slash(url)
     if filters != dict():
         url += '?'
@@ -48,53 +51,64 @@ def generate_get_single_url(object_id:str, base_url:str=API_BASE_URL, route:str=
         route_suffix += f'{i}={j}&' 
     return f'{add_trailing_slash(base_url)}{route}/{object_id}/{route_suffix}'
 
-
-def get_from_API(url, auth_header:Dict=AUTH_HEADER) -> requests.Response:
-    logger.debug(f'Getting from API at url {url}')
-    response = requests.get(url,headers=auth_header)
+def check_code(response:requests.Response,code:int):
     if response.status_code != 200:
         raise RequestUnsuccessfulError(response)
     return response
 
-def patch(url,data,auth_header:Dict=AUTH_HEADER) -> requests.Response:
-    response = requests.patch(url=url,data=data,headers=auth_header)
-    if response.status_code != 200:
+class RestAPI:
+
+    _session: requests.Session
+    _base_url:str
+
+    def _parse_output(self, func, *args, **kwargs):
+        return parse_output(func)
+
+    def __init__(self, base_url:str, key:str):
+        self._session = requests.Session()
+        self._session.headers.update({'Authorization':f'Token {key}'})
+        self._base_url = add_trailing_slash(base_url)
+
+    def check_connection(self, route) -> bool:
+        response = self._session.get(self._base_url + route)
+        return response.status_code == 200
+
+    def _get_from_API(self, url) -> requests.Response:
+        response = self._session.get(url)
+        return check_code(response,200)
+
+    def _patch(self, url,data,) -> requests.Response:
+        response = self._session.patch(url=url,data=data)
+        return check_code(response,200)
+
+    def _post(self, url, data, ) -> requests.Response:
+        response = self._session.post(url=url,json=data)
+        return check_code(response,201) ##used to return response.json, now returns response
+
+    def download_image(self, url, output_handler: Callable, filename:Optional[str]=None):
+        response = self._session.get(url, stream=True)
+        if response.status_code == 200:
+            if filename is None:
+                d = response.headers['content-disposition']
+                filename = re.findall("filename=\"(.+)\"", d)[0]
+            return output_handler(response.raw, filename=filename)
         raise RequestUnsuccessfulError(response)
-    return response
 
-def post(url, data, auth_header:Dict=AUTH_HEADER) -> requests.Response:
-    response = requests.post(url=url,json=data,headers=auth_header)
-    if response.status_code != 201:
-        raise RequestUnsuccessfulError(response)    
-    return response.json()
+    def get_single(self,object_id,output_type:SmartscopeBaseModel, route_suffix:str='') -> SmartscopeBaseModel:
+        url = generate_get_single_url(object_id=object_id, route=output_type.api_route, route_suffix=route_suffix)
+        response =  self._get_from_API(url)
+        return parse_single(response.json(),output_type=output_type)
 
-def download_image(url, output_handler: Callable, auth_header:Dict=AUTH_HEADER, filename:Optional[str]=None):
-    response = requests.get(url, stream=True, headers=auth_header)
-    if response.status_code == 200:
-        if filename is None:
-            d = response.headers['content-disposition']
-            filename = re.findall("filename=\"(.+)\"", d)[0]
-        return output_handler(response.raw, filename=filename)
-    raise RequestUnsuccessfulError(response)
+    def get_many(self, output_type:SmartscopeBaseModel,route_suffix:str='', **filters) -> QueryList[SmartscopeBaseModel]:
+        url = generate_get_url(route=output_type.api_route,filters=filters, route_suffix=route_suffix)
+        response =  self._get_from_API(url)
+        return parse_many(response.json(), output_type=output_type)
 
-@parse_output
-def get_single(object_id,output_type:SmartscopeBaseModel, auth_header:Dict=AUTH_HEADER, route_suffix:str='') -> SmartscopeBaseModel:
-    url = generate_get_single_url(object_id=object_id, route=output_type.api_route, route_suffix=route_suffix)
-    response =  get_from_API(url, auth_header)
-    return response.json()
-
-@parse_output
-def get_many(output_type:SmartscopeBaseModel, auth_header:Dict=AUTH_HEADER,route_suffixes:List[str]=[], **filters) -> QueryList[SmartscopeBaseModel]:
-    url = generate_get_url(route=output_type.api_route,filters=filters, route_suffixes=route_suffixes)
-    print(url)
-    response =  get_from_API(url, auth_header)
-    return response.json()
-
-@parse_multiple
-def get_multiple(instance:SmartscopeBaseModel,output_types:List[SmartscopeBaseModel], auth_header:Dict=AUTH_HEADER, route_suffix:str='') -> Dict[str,SmartscopeBaseModel]:
-    url = generate_get_single_url(object_id=instance.uid,route=instance.api_route, route_suffix=route_suffix)
-    response = get_from_API(url, auth_header) 
-    return response.json()
+    @parse_multiple
+    def get_multiple(self,instance:SmartscopeBaseModel,output_types:List[SmartscopeBaseModel], route_suffix:str='') -> Dict[str,SmartscopeBaseModel]:
+        url = generate_get_single_url(object_id=instance.uid,route=instance.api_route, route_suffix=route_suffix)
+        response = self.get_from_API(url) 
+        return response.json()
 
 def update(instance:SmartscopeBaseModel, auth_header:Dict=AUTH_HEADER, route_suffix:str='', **fields) -> SmartscopeBaseModel:
     url = generate_get_single_url(object_id=instance.uid,route=instance.api_route, route_suffix=route_suffix)

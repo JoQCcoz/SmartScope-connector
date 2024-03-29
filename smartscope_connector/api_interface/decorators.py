@@ -4,6 +4,16 @@ from ..Datatypes.querylist import QueryList
 from ..models.base_model import SmartscopeBaseModel
 
 
+def parse_single(obj:Dict, output_type:SmartscopeBaseModel) -> SmartscopeBaseModel:
+    return output_type.model_validate(obj)
+
+def parse_many(results:List[Dict]|Dict,output_type:SmartscopeBaseModel) -> List[SmartscopeBaseModel]:
+    if isinstance(results,dict):
+        results = results['results']
+    for i,item in enumerate(results):
+        results[i] = output_type.model_validate(item)
+    return QueryList(results)
+
 def parse_output(func):
 
     def wrapper_many(output_type:SmartscopeBaseModel,*args,**kwargs) -> List[SmartscopeBaseModel]:
@@ -14,7 +24,7 @@ def parse_output(func):
             results[i] = output_type.model_validate(item)
         return QueryList(results)
         
-    def wrapper_single(output_type:SmartscopeBaseModel, *args, **kwargs) -> SmartscopeBaseModel:
+    def wrapper_single(_,output_type:SmartscopeBaseModel, *args, **kwargs) -> SmartscopeBaseModel:
         output = func(output_type=output_type,*args,**kwargs)
         return output_type.model_validate(output)
     

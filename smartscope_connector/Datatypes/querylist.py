@@ -23,3 +23,7 @@ class QueryList(list):
         for obj in self:
             for field, value in fields.items():
                 setattr(obj, field, value)
+
+    def get_values(self,attr):
+        return list(map(lambda x: getattr(x,attr),self))
+            
